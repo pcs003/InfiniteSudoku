@@ -46,7 +46,7 @@ public class SudokuGrid : MonoBehaviour
             SetGridNumber(GameSettings.Instance.GetGameMode());
         } else
         {
-            SetGridFromString(PlayerPrefs.GetString("SavedBoard",""), PlayerPrefs.GetString("SavedUndoStack", ""), PlayerPrefs.GetString("SavedMarks",""));
+            SetGridFromString();
         }
         
 
@@ -138,9 +138,15 @@ public class SudokuGrid : MonoBehaviour
     }
 
     // sets grid and undo stack from respective strings
-    private void SetGridFromString(string gridStr, string stackStr, string markStr)
+    private void SetGridFromString()
     {
         GameEvents.OnContinueGameMethod();
+
+        string gridStr = PlayerPrefs.GetString("SavedBoard", "");
+        string stackStr = PlayerPrefs.GetString("SavedUndoStack", "");
+        string markStr = PlayerPrefs.GetString("SavedMarks", "");
+        string interString = PlayerPrefs.GetString("SavedInteractables", "");
+
         // set grid from string
 
         string[] numsAsString = gridStr.Split(' ');
@@ -172,7 +178,7 @@ public class SudokuGrid : MonoBehaviour
 
         string[] markSets = markStr.Split(',');
         Debug.Log(markStr);
-        for (int i = 0; i < markSets.Length; i++)
+        for (int i = 0; i < markSets.Length - 1; i++)
         {
             string[] marks = markSets[i].Split(' ');
             int index = int.Parse(marks[0]);
@@ -184,6 +190,19 @@ public class SudokuGrid : MonoBehaviour
                 int markIdx = int.Parse(marks[j]);
                 Debug.Log(markIdx);
                 gridSquares[index].GetComponent<GridSquare>().possibleNums[markIdx].SetActive(true);
+            }
+        }
+
+        // sets interactable from string
+
+        for (int i = 0; i < interString.Length; i++)
+        {
+            if (interString[i] == '1')
+            {
+                gridSquares[i].GetComponent<GridSquare>().interactable = true;
+            } else
+            {
+                gridSquares[i].GetComponent<GridSquare>().interactable = false;
             }
         }
         
@@ -263,7 +282,7 @@ public class SudokuGrid : MonoBehaviour
         
     }
 
-    // save board state and undo stack state as strings in PlayerPrefs
+    // save board state, undo stack state, marks state, and interactable states as strings in PlayerPrefs
     public void OnHomeButtonPressed()
     {
         // Save board state to player prefs as string ex. "1 4 5 8 9 2 0 3"
@@ -295,20 +314,40 @@ public class SudokuGrid : MonoBehaviour
         for (int i = 0; i < gridSquares.Count; i++)
         {
             squareMarks = i.ToString();
+            bool hasMarks = false;
             for (int j = 0; j < 9; j++)
             {
                 if (gridSquares[i].GetComponent<GridSquare>().possibleNums[j].activeSelf)
                 {
                     squareMarks = squareMarks + " " + j.ToString();
+                    hasMarks = true;
                 }
             }
-            markString += squareMarks;
-            markString += ",";
+            if (hasMarks)
+            {
+                markString += squareMarks;
+                markString += ",";
+            }
+            
             squareMarks = "";
             
         }
 
         PlayerPrefs.SetString("SavedMarks", markString);
+
+        string interactables = "";
+        for (int i = 0; i < gridSquares.Count; i++)
+        {
+            if (gridSquares[i].GetComponent<GridSquare>().IsInteractable())
+            {
+                interactables += "1";
+            } else
+            {
+                interactables += "0";
+            }
+        }
+
+        PlayerPrefs.SetString("SavedInteractables", interactables);
     }
 
     // brings up confirmation popup menu

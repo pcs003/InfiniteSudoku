@@ -12,6 +12,7 @@ public class SudokuGrid : MonoBehaviour
     public float square_offset = 0.0f;
 
     public GameObject gridSquare;
+    public GameObject RestartMenu;
 
     public Vector2 startPos = new Vector2(0.0f, 0.0f);
     public float squareScale = 1.0f;
@@ -36,14 +37,16 @@ public class SudokuGrid : MonoBehaviour
 
         gridSquares = new List<GameObject>();
 
+        undoStack.Clear();
+
         CreateGrid();
+
         if (PlayerPrefs.GetString("SavedBoard", "Default") == "Default")
         {
             SetGridNumber(GameSettings.Instance.GetGameMode());
         } else
         {
-            Debug.Log("Trying to set board from string");
-            SetGridFromString(PlayerPrefs.GetString("SavedBoard"));
+            SetGridFromString(PlayerPrefs.GetString("SavedBoard",""), PlayerPrefs.GetString("SavedUndoStack", ""), PlayerPrefs.GetString("SavedMarks",""));
         }
         
 
@@ -59,9 +62,9 @@ public class SudokuGrid : MonoBehaviour
             }
         }
 
-        undoStack.Clear();
+        
 
-
+        RestartMenu.SetActive(false);
     }
 
     // Update is called once per frame
@@ -134,12 +137,14 @@ public class SudokuGrid : MonoBehaviour
 
     }
 
-    private void SetGridFromString(string str)
+    // sets grid and undo stack from respective strings
+    private void SetGridFromString(string gridStr, string stackStr, string markStr)
     {
-        string[] numsAsString = str.Split(' ');
-        int[] nums = new int[numsAsString.Length];
+        GameEvents.OnContinueGameMethod();
+        // set grid from string
 
-        Debug.Log(nums.Length);
+        string[] numsAsString = gridStr.Split(' ');
+        int[] nums = new int[numsAsString.Length];
 
         for (int i = 0; i < numsAsString.Length; i++)
         {
@@ -149,6 +154,39 @@ public class SudokuGrid : MonoBehaviour
         {
             gridSquares[i].GetComponent<GridSquare>().SetNumber(nums[i]);
         }
+
+        // set undo stack from string
+        string[] stackString = stackStr.Split(' ');
+
+        for (int i = 0; i < stackString.Length - 1; i++)
+        {
+            string[] tupString = stackString[i].Split(',');
+            int idx = int.Parse(tupString[0]);
+            int num = int.Parse(tupString[1]);
+
+            Tuple<int, int> tup = new Tuple<int, int>(idx, num);
+            undoStack.Push(tup);
+        }
+
+        // set marks from string
+
+        string[] markSets = markStr.Split(',');
+        Debug.Log(markStr);
+        for (int i = 0; i < markSets.Length; i++)
+        {
+            string[] marks = markSets[i].Split(' ');
+            int index = int.Parse(marks[0]);
+            
+            for (int j = 1; j < marks.Length; j++)
+            {
+                Debug.Log(index);
+                
+                int markIdx = int.Parse(marks[j]);
+                Debug.Log(markIdx);
+                gridSquares[index].GetComponent<GridSquare>().possibleNums[markIdx].SetActive(true);
+            }
+        }
+        
     }
 
     private void setGridSquareData(SudokuData.SudokuBoardData data)
@@ -204,20 +242,31 @@ public class SudokuGrid : MonoBehaviour
         }
     }
 
+    // store recent change to undo stack
     public void OnBoardChanged(int idx, int val)
     {
         var tup = new Tuple<int, int>(idx, val);
         undoStack.Push(tup);
     }
 
+    // pop recent change from undo stack and undo it
     public void UndoButton()
     {
-        Tuple<int,int> tup = undoStack.Pop();
-        gridSquares[tup.Item1].GetComponent<GridSquare>().SetNumber(tup.Item2);
+        if (undoStack.Count > 0)
+        {
+            Tuple<int, int> tup = undoStack.Pop();
+            gridSquares[tup.Item1].GetComponent<GridSquare>().SetNumber(tup.Item2);
+        } else
+        {
+            return;
+        }
+        
     }
 
+    // save board state and undo stack state as strings in PlayerPrefs
     public void OnHomeButtonPressed()
     {
+        // Save board state to player prefs as string ex. "1 4 5 8 9 2 0 3"
         savedBoard = getCurrentGrid();
         string boardString = "";
         for (int i = 0; i < savedBoard.Length; i++)
@@ -227,5 +276,63 @@ public class SudokuGrid : MonoBehaviour
         }
         boardString = boardString.Remove(boardString.Length - 1);
         PlayerPrefs.SetString("SavedBoard", boardString);
+
+        // save undo stack to player prefs as string ex. "1,5 2,6 41,3"
+        string stackString = "";
+        int total = undoStack.Count;
+        for (int i = 0; i < total; i++)
+        {
+            Tuple<int, int> tup = undoStack.Pop();
+            string tupString = tup.Item1.ToString() + "," + tup.Item2.ToString();
+            stackString = tupString + " " + stackString;
+        }
+
+        PlayerPrefs.SetString("SavedUndoStack", stackString);
+
+        string squareMarks = "";
+        string markString = "";
+
+        for (int i = 0; i < gridSquares.Count; i++)
+        {
+            squareMarks = i.ToString();
+            for (int j = 0; j < 9; j++)
+            {
+                if (gridSquares[i].GetComponent<GridSquare>().possibleNums[j].activeSelf)
+                {
+                    squareMarks = squareMarks + " " + j.ToString();
+                }
+            }
+            markString += squareMarks;
+            markString += ",";
+            squareMarks = "";
+            
+        }
+
+        PlayerPrefs.SetString("SavedMarks", markString);
+    }
+
+    // brings up confirmation popup menu
+    public void PressedRestartButton()
+    {
+        RestartMenu.SetActive(true);
+    }
+
+    // confirm start over and close menu
+    public void StartOver()
+    {
+        for (int i = 0; i < gridSquares.Count; i++)
+        {
+            if (gridSquares[i].GetComponent<GridSquare>().IsInteractable())
+            {
+                gridSquares[i].GetComponent<GridSquare>().SetNumber(0);
+            }
+        }
+        RestartMenu.SetActive(false);
+    }
+
+    // cancel start over and close menu
+    public void CancelStartOver()
+    {
+        RestartMenu.SetActive(false);
     }
 }

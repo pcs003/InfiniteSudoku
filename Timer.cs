@@ -127,16 +127,30 @@ public class Timer : MonoBehaviour
     {
         GameEvents.OnGameOver += OnGameOver;
         GameEvents.OnPlayAgain += OnPlayAgain;
+        GameEvents.OnHomeButtonPressed += OnHomeButtonPressed;
+        GameEvents.OnContinueGame += OnContinueGame;
     }
 
     private void OnDisable()
     {
         GameEvents.OnGameOver -= OnGameOver;
         GameEvents.OnPlayAgain -= OnPlayAgain;
+        GameEvents.OnHomeButtonPressed -= OnHomeButtonPressed;
+        GameEvents.OnContinueGame -= OnContinueGame;
     }
 
     public Text GetCurrentTimeText()
     {
         return clockText;
+    }
+
+    public void OnHomeButtonPressed()
+    {
+        PlayerPrefs.SetFloat("SavedTime", deltaTime);
+    }
+
+    public void OnContinueGame()
+    {
+        deltaTime = PlayerPrefs.GetFloat("SavedTime", 0.0f);
     }
 }

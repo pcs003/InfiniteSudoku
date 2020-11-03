@@ -84,4 +84,14 @@ public class GameEvents : MonoBehaviour
         }
     }
 
+    public delegate void ContinueGame();
+    public static event ContinueGame OnContinueGame;
+
+    public static void OnContinueGameMethod()
+    {
+        if (OnContinueGame != null)
+        {
+            OnContinueGame();
+        }
+    }
 }

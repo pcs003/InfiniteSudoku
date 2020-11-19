@@ -60,6 +60,8 @@ public class SudokuData : MonoBehaviour
 
     public static int[,] mat;
 
+    public static int[,] filledMat = new int[N, N];
+
     public static SudokuData Instance;
 
     public static string desiredDifficulty;
@@ -114,6 +116,14 @@ public class SudokuData : MonoBehaviour
         //}
 
         fillArray(mat, 0, 0);
+
+        for (int i = 0; i < N; i++)
+        {
+            for (int j = 0; j < N; j++)
+            {
+                filledMat[i, j] = mat[i, j];
+            }
+        }
 
         int numToBeRemoved = numRemoved; // INSERT NUM TO BE REMOVED HERE
         mat = removeRandom(mat, numToBeRemoved);

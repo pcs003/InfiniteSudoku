@@ -62,6 +62,8 @@ public class SudokuData : MonoBehaviour
 
     public static int[,] filledMat = new int[N, N];
 
+    public static int[,] solved = new int[N, N];
+
     public static SudokuData Instance;
 
     public static string desiredDifficulty;
@@ -89,44 +91,49 @@ public class SudokuData : MonoBehaviour
         }
     }
 
-
-    void Start()
-    {
-        
-    }
-
-    void Update()
-    {
-        
-    }
-
     public static int[] GenerateSudoku(int numRemoved)
     {
-        mat = new int[N,N];
-
-        //for (int i = 0; i < N; i++)
-        //{
-        //    List<int> sublist = new List<int>();
-        //    for (int j = 0; j < N; j++)
-        //    {
-        //        sublist.Add(0);
-        //    }
-
-        //    mat.Add(sublist);
-        //}
-
-        fillArray(mat, 0, 0);
-
-        for (int i = 0; i < N; i++)
+        bool unique = false;
+        while (!unique)
         {
-            for (int j = 0; j < N; j++)
+            mat = new int[N, N];
+
+            fillArray(mat, 0, 0);
+
+            for (int i = 0; i < N; i++)
             {
-                filledMat[i, j] = mat[i, j];
+                for (int j = 0; j < N; j++)
+                {
+                    filledMat[i, j] = mat[i, j];
+                }
+            }
+
+            int numToBeRemoved = numRemoved; // INSERT NUM TO BE REMOVED HERE
+            mat = removeRandom(mat, numToBeRemoved);
+
+            for (int i = 0; i < N; i++)
+            {
+                for (int j = 0; j < N; j++)
+                {
+                    solved[i,j] = mat[i, j];
+                }
+            }
+
+            solveArray(solved, 0, 0);
+
+            unique = true;
+            for (int i = 0; i < N; i++)
+            {
+                for (int j = 0; j < N; j++)
+                {
+                    if (solved[i, j] != filledMat[i, j])
+                    {
+                        unique = false;
+                    }
+                }
             }
         }
-
-        int numToBeRemoved = numRemoved; // INSERT NUM TO BE REMOVED HERE
-        mat = removeRandom(mat, numToBeRemoved);
+        
 
         int[] output = new int[N * N];
         int idx = 0;
@@ -389,4 +396,105 @@ public class SudokuData : MonoBehaviour
 
         return true;
     }
+
+    public static int findNextEmpty(int[,] mat, int row, int col)
+    {
+        if (col == N - 1 && row == N - 1)
+        {
+            return -1;
+        }
+
+        if (col == N - 1)
+        {
+            col = 0;
+            row++;
+        }
+        else
+        {
+            col++;
+        }
+
+        while (mat[row,col] != 0)
+        {
+            if (col == N - 1 && row == N - 1)
+            {
+                return -1;
+            }
+            if (col == N - 1)
+            {
+                col = 0;
+                row++;
+            }
+            else
+            {
+                col++;
+            }
+        }
+
+        return row * 9 + col;
+    }
+
+    public static bool solveArray(int[,] mat, int row, int col)
+    {
+        // end condition
+        if (row >= N)
+        {
+            return true;
+        }
+
+
+        // generate array of possible numbers randomly
+        List<int> numseq = new List<int>();
+        for (int i = 0; i < N; ++i)
+        {
+            numseq.Add(i + 1);
+        }
+
+
+        numseq = Shuffle(numseq);
+        // a while loop that calls next until return value is true
+        int index = 0;
+        bool itworks = false;
+
+
+        // while it doesnt work
+        while (!itworks)
+        {
+            // increment to try next value
+            index++;
+            // if tried all values, 
+            if (index == N)
+            {
+                mat[row, col] = 0;
+                return false;
+            }
+            // fill the current index into the cell
+
+            mat[row, col] = numseq[index];
+            // if checkRow is false or checkCol is false
+            if (!checkRow(row, mat) || !checkCol(col, mat) || !checkBox(row, col, mat))
+            {
+                mat[row, col] = 0;
+                continue;
+            }
+
+            int matIdx = findNextEmpty(mat, row, col);
+
+            // check if it works with current filled in cells
+            if (matIdx == -1)
+            {
+                break;
+            }
+            else
+            {
+                int rowIdx = matIdx / 9;
+                int colIdx = matIdx % 9;
+                itworks = solveArray(mat, rowIdx, colIdx);
+            }
+        }
+        // call next 
+        return true;
+    }
 }
+
+

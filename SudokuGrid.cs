@@ -269,6 +269,10 @@ public class SudokuGrid : MonoBehaviour
             if (gridSquares[i].GetComponent<GridSquare>().IsInteractable())
             {
                 gridSquares[i].GetComponent<GridSquare>().SetNumber(0);
+                for (int j = 0; j < gridSquares[i].GetComponent<GridSquare>().possibleNums.Length; j++)
+                {
+                    gridSquares[i].GetComponent<GridSquare>().possibleNums[j].SetActive(false);
+                }
             }
         }
     }
@@ -344,6 +348,11 @@ public class SudokuGrid : MonoBehaviour
     // this is an assist mode feature
     public void RemoveMarks(int val, int idx)
     {
+        if (val == 0)
+        {
+            return;
+        }
+
         int row = idx / 9;
         int col = idx % 9;
 

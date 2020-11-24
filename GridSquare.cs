@@ -159,9 +159,18 @@ public class GridSquare : Selectable, IPointerClickHandler, ISubmitHandler, IPoi
                 GameEvents.OnBoardChangedMethod(squareIdx, num, number);
                 if (number == 0)
                 {
-                    possibleNumsObject.SetActive(true);
-                    SetNumber(number);
-
+                    if (num == 0)
+                    {
+                        for (int i = 0; i < possibleNums.Length; i++)
+                        {
+                            possibleNums[i].SetActive(false);
+                        }
+                    } else
+                    {
+                        possibleNumsObject.SetActive(true);
+                        SetNumber(number);
+                    }
+                    
                     //set color to normal
                     RightNum();
                 } else
@@ -228,24 +237,11 @@ public class GridSquare : Selectable, IPointerClickHandler, ISubmitHandler, IPoi
     public void WrongNum()
     {
         numText.GetComponent<Text>().color = Color.red;
-        //ColorBlock cb = GetComponent<GridSquare>().colors;
-        
-
-        //cb.normalColor = newColor;
-        //cb.selectedColor = newColor;
-        //GetComponent<GridSquare>().colors = cb;
     }
 
     public void RightNum()
     {
-        //ColorBlock cb = GetComponent<GridSquare>().colors;
-        //Color newColor1 = new Color(0, 1, 1, 0.7058f);
         numText.GetComponent<Text>().color = Color.black;
-        //Color newColor2 = new Color(0.666f, 0.9882f, 1, 0.7058f);
-
-        //cb.normalColor = newColor1;
-        //cb.selectedColor = newColor2;
-        //GetComponent<GridSquare>().colors = cb;
     }
 
     public void SetColor(Color color)
